@@ -722,26 +722,48 @@ export const TasksSection: React.FC = () => {
       }
 
       setTasks((prevTasks) => {
+        // Merge Supabase loaded tasks with any locally created tasks in prevTasks that are less than 60s old and not yet in Supabase result
+        const mergedMap = new Map<string, Task>();
+        loaded.forEach((t) => mergedMap.set(t.id, t));
+
+        const now = Date.now();
+        prevTasks.forEach((pt) => {
+          if (!mergedMap.has(pt.id)) {
+            const createdTime = new Date(pt.createdAt || 0).getTime();
+            // Preserve recent local task (less than 60 seconds old) until Supabase sync confirms it
+            if (now - createdTime < 60000) {
+              mergedMap.set(pt.id, pt);
+            }
+          }
+        });
+
+        const finalTasks = Array.from(mergedMap.values());
+        finalTasks.sort((a, b) => {
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
+
         const hasChanged =
-          prevTasks.length !== loaded.length ||
+          prevTasks.length !== finalTasks.length ||
           prevTasks.some((pt, i) => {
-            const lt = loaded[i];
+            const ft = finalTasks[i];
             return (
-              !lt ||
-              pt.id !== lt.id ||
-              pt.status !== lt.status ||
-              pt.completedAt !== lt.completedAt ||
-              pt.title !== lt.title ||
-              pt.description !== lt.description ||
-              pt.assignedToName !== lt.assignedToName ||
-              pt.assignedToEmail !== lt.assignedToEmail ||
-              pt.priority !== lt.priority
+              !ft ||
+              pt.id !== ft.id ||
+              pt.status !== ft.status ||
+              pt.completedAt !== ft.completedAt ||
+              pt.title !== ft.title ||
+              pt.description !== ft.description ||
+              pt.assignedToName !== ft.assignedToName ||
+              pt.assignedToEmail !== ft.assignedToEmail ||
+              pt.priority !== ft.priority
             );
           });
 
         if (hasChanged) {
-          safeSaveTasksLocally(userId, loaded);
-          return loaded;
+          safeSaveTasksLocally(userId, finalTasks);
+          return finalTasks;
         }
         return prevTasks;
       });
@@ -863,6 +885,7 @@ export const TasksSection: React.FC = () => {
 
     try {
       await supabaseService.saveTask(createdTask);
+      loadTasksFromSupabase();
     } catch (err) {
       console.warn('Erro ao salvar tarefa no Supabase:', err);
     } finally {
