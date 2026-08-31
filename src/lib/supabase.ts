@@ -7,8 +7,8 @@ export function getSupabaseCredentials(): { url: string; key: string } {
   const localUrl = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_url') : '';
   const localKey = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_anon_key') : '';
 
-  let url = envUrl || localUrl || 'https://mtdquepmyexalfpjjqgd.supabase.co';
-  let key = envKey || localKey || 'sb_publishable_I4GJwO7qzIBVtK6UjLj_1g_7fzyK8jj';
+  let url = envUrl || localUrl || 'https://kualifdkjmpfzhsofvxc.supabase.co';
+  let key = envKey || localKey || 'sb_publishable_AaQz8IBv0mNF0yJaMpcryg_8POenBSS';
 
   // Sanitize URL if user typed /rest/v1/ or trailing slash
   if (url) {
