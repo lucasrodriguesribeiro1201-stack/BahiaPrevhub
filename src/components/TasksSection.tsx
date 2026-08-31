@@ -721,8 +721,30 @@ export const TasksSection: React.FC = () => {
         knownTaskStatusesRef.current = new Map(loaded.map((t) => [t.id, t.status]));
       }
 
-      setTasks(loaded);
-      safeSaveTasksLocally(userId, loaded);
+      setTasks((prevTasks) => {
+        const hasChanged =
+          prevTasks.length !== loaded.length ||
+          prevTasks.some((pt, i) => {
+            const lt = loaded[i];
+            return (
+              !lt ||
+              pt.id !== lt.id ||
+              pt.status !== lt.status ||
+              pt.completedAt !== lt.completedAt ||
+              pt.title !== lt.title ||
+              pt.description !== lt.description ||
+              pt.assignedToName !== lt.assignedToName ||
+              pt.assignedToEmail !== lt.assignedToEmail ||
+              pt.priority !== lt.priority
+            );
+          });
+
+        if (hasChanged) {
+          safeSaveTasksLocally(userId, loaded);
+          return loaded;
+        }
+        return prevTasks;
+      });
     } catch (err) {
       console.warn('Erro ao sincronizar tarefas:', err);
     } finally {
@@ -745,11 +767,27 @@ export const TasksSection: React.FC = () => {
 
     loadTasksFromSupabase();
 
+    // Smart polling: every 15 seconds, only when tab is visible
     const interval = setInterval(() => {
-      loadTasksFromSupabase();
-    }, 4000);
+      if (!document.hidden) {
+        loadTasksFromSupabase();
+      }
+    }, 15000);
 
-    return () => clearInterval(interval);
+    const handleFocus = () => {
+      if (!document.hidden) {
+        loadTasksFromSupabase();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, [userId, loadTasksFromSupabase, isTargetedToUser]);
 
   // Handle Create Task

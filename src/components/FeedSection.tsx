@@ -249,8 +249,26 @@ export const FeedSection: React.FC = () => {
 
   useEffect(() => {
     loadPostsFromSupabase();
-    const interval = setInterval(loadPostsFromSupabase, 8000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        loadPostsFromSupabase();
+      }
+    }, 15000);
+
+    const handleFocus = () => {
+      if (!document.hidden) {
+        loadPostsFromSupabase();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, [loadPostsFromSupabase]);
 
   // Handle create post

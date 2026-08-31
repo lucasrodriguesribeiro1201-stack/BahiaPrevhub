@@ -135,7 +135,8 @@ export const supabaseService = {
       const { data, error } = await supabase
         .from('funeraria_os')
         .select('*')
-        .order('created_at_iso', { ascending: false });
+        .order('created_at_iso', { ascending: false })
+        .limit(100);
 
       if (error) {
         console.warn('Erro ao buscar OS no Supabase:', error.message);
@@ -190,12 +191,30 @@ export const supabaseService = {
     if (!supabase) return null;
 
     try {
-      const { data, error } = await supabase.from('user_tasks').select('*').order('created_at_iso', { ascending: false });
-      if (error) {
-        console.warn('Erro ao buscar tarefas no Supabase:', error.message);
+      // Filter out system config rows (id starting with 'sys_') directly at DB query level to avoid heavy payloads and statement timeouts
+      let res = await supabase
+        .from('user_tasks')
+        .select('*')
+        .not('id', 'like', 'sys_%')
+        .order('created_at_iso', { ascending: false })
+        .limit(150);
+
+      if (res.error) {
+        console.warn('Filtro ordenado falhou no Supabase, tentando fallback sem ordenação:', res.error.message);
+        res = await supabase
+          .from('user_tasks')
+          .select('*')
+          .not('id', 'like', 'sys_%')
+          .limit(150);
+      }
+
+      const data = res.data;
+      if (res.error || !data) {
+        console.warn('Erro ao buscar tarefas no Supabase:', res.error?.message);
         return null;
       }
-      const taskRows = (data || []).filter((row: any) => row.id !== 'sys_team_roles_config' && row.title !== '__SYS_ROLES_CONFIG__');
+
+      const taskRows = (data || []).filter((row: any) => row.id !== 'sys_team_roles_config' && row.title !== '__SYS_ROLES_CONFIG__' && row.id !== 'sys_users_registry');
       return taskRows.map((row: any) => {
         const { cleanDescription, meta } = unpackTaskMetadata(row.description || '');
 
@@ -371,7 +390,8 @@ export const supabaseService = {
       const { data, error } = await supabase
         .from('funeraria_satisfaction_surveys')
         .select('*')
-        .order('created_at_iso', { ascending: false });
+        .order('created_at_iso', { ascending: false })
+        .limit(100);
       if (error) return null;
       return (data || []).map((row: any) => ({
         id: row.id,
@@ -451,7 +471,8 @@ export const supabaseService = {
       const { data, error } = await supabase
         .from('pops')
         .select('*')
-        .order('created_at_iso', { ascending: false });
+        .order('created_at_iso', { ascending: false })
+        .limit(100);
       if (error) return null;
       return (data || []).map((row: any) => ({
         id: row.id,
@@ -509,7 +530,8 @@ export const supabaseService = {
       const { data, error } = await supabase
         .from('posts')
         .select('*')
-        .order('created_at_iso', { ascending: false });
+        .order('created_at_iso', { ascending: false })
+        .limit(50);
       if (error) {
         console.warn('Erro ao buscar posts no Supabase:', error.message);
         return null;
@@ -811,7 +833,7 @@ export const supabaseService = {
 
             const resolvedCanFuneraria = (row.can_access_funeraria !== undefined && row.can_access_funeraria !== null) 
               ? Boolean(row.can_access_funeraria) 
-              : (existingUser?.canAccessFuneraria !== undefined ? Boolean(existingUser.canAccessFuneraria) : checkFunerariaAccess({ role: row.role, email: emailLower }, emailLower));
+              : ((existingUser as any)?.canAccessFuneraria !== undefined ? Boolean((existingUser as any).canAccessFuneraria) : checkFunerariaAccess({ role: row.role, email: emailLower }, emailLower));
 
             const formatted = {
               uid: row.uid,

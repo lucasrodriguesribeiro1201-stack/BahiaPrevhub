@@ -251,4 +251,8 @@ CREATE POLICY "Permitir Leitura e Escrita Geral" ON public.pops FOR ALL USING (t
 CREATE POLICY "Permitir Leitura e Escrita Geral" ON public.posts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Permitir Leitura e Escrita Geral" ON public.posts_comments FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Permitir Leitura e Escrita Geral" ON public.users FOR ALL USING (true) WITH CHECK (true);
+
+-- Índices de Performance para evitar timeouts
+CREATE INDEX IF NOT EXISTS idx_user_tasks_created_at ON public.user_tasks (created_at_iso DESC);
+CREATE INDEX IF NOT EXISTS idx_user_tasks_id ON public.user_tasks (id);
 `;

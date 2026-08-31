@@ -353,8 +353,26 @@ export const SatisfactionSurveySection: React.FC<SatisfactionSurveySectionProps>
 
   useEffect(() => {
     loadSurveysFromSupabase();
-    const interval = setInterval(loadSurveysFromSupabase, 8000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        loadSurveysFromSupabase();
+      }
+    }, 15000);
+
+    const handleFocus = () => {
+      if (!document.hidden) {
+        loadSurveysFromSupabase();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, [loadSurveysFromSupabase]);
 
   // Compute IQAF (Índice de Qualidade do Atendimento Funerário) & Classification

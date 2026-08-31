@@ -313,8 +313,26 @@ export const FunerariaSection: React.FC = () => {
 
   useEffect(() => {
     loadOrdersFromSupabase();
-    const interval = setInterval(loadOrdersFromSupabase, 8000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        loadOrdersFromSupabase();
+      }
+    }, 15000);
+
+    const handleFocus = () => {
+      if (!document.hidden) {
+        loadOrdersFromSupabase();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, [loadOrdersFromSupabase]);
 
   const showToast = (msg: string) => {
