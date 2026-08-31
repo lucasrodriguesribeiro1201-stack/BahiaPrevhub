@@ -329,6 +329,7 @@ export const supabaseService = {
         due_date: task.dueDate || '',
         completed: task.status === 'concluida',
         created_by: creatorDisplay,
+        data_json: task,
         created_at_iso: task.createdAt || new Date().toISOString()
       };
 
