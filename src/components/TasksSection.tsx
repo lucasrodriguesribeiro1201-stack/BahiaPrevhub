@@ -678,7 +678,7 @@ export const TasksSection: React.FC = () => {
         const rawData = await supabaseService.fetchTasks();
         if (rawData && Array.isArray(rawData)) {
           rawData.forEach((item: Task) => {
-            if (item && item.id && isTargetedToUser(item)) {
+            if (item && item.id) {
               taskMap.set(item.id, item);
             }
           });
@@ -772,7 +772,7 @@ export const TasksSection: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [userId, isTargetedToUser, triggerCompletionToast, safeSaveTasksLocally]);
+  }, [userId, triggerCompletionToast, safeSaveTasksLocally]);
 
   useEffect(() => {
     const savedLocal = localStorage.getItem(`tasks_v2_${userId}`) || localStorage.getItem('tasks_v2_global');
@@ -780,7 +780,7 @@ export const TasksSection: React.FC = () => {
       try {
         const parsed = JSON.parse(savedLocal);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setTasks(parsed.filter(isTargetedToUser));
+          setTasks(parsed);
         }
       } catch (e) {
         // ignore

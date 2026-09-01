@@ -753,8 +753,8 @@ export const supabaseService = {
         { uid: 'u_vitor', name: 'Vitor', email: 'vitor@bahiaprev.com.br', role: 'Financeiro', canPostFeed: true, canCreateTasks: true, createdAt: '2026-07-01T00:00:00.000Z' },
         { uid: 'u_paulo', name: 'Paulo', email: 'paulo@bahiaprev.com.br', role: 'Agente Funerário', canPostFeed: true, canCreateTasks: true, createdAt: '2026-07-01T00:00:00.000Z' }
       ],
-      deletedEmails: ['marketing@bahiaprev.com.br'],
-      deletedUids: ['u_lucas_mkt']
+      deletedEmails: [],
+      deletedUids: []
     };
 
     let registry = { ...defaultRegistry };
@@ -764,11 +764,11 @@ export const supabaseService = {
       const cached = localStorage.getItem('bahiaprev_sys_users_registry');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed && Array.isArray(parsed.users)) {
+        if (parsed && Array.isArray(parsed.users) && parsed.users.length > 0) {
           registry = {
             users: parsed.users,
-            deletedEmails: Array.isArray(parsed.deletedEmails) ? parsed.deletedEmails : ['marketing@bahiaprev.com.br'],
-            deletedUids: Array.isArray(parsed.deletedUids) ? parsed.deletedUids : ['u_lucas_mkt']
+            deletedEmails: Array.isArray(parsed.deletedEmails) ? parsed.deletedEmails : [],
+            deletedUids: Array.isArray(parsed.deletedUids) ? parsed.deletedUids : []
           };
         }
       }
@@ -781,17 +781,25 @@ export const supabaseService = {
     try {
       const { data, error } = await supabase
         .from('user_tasks')
-        .select('description')
+        .select('*')
         .eq('id', 'sys_users_registry')
         .single();
 
-      if (!error && data?.description) {
-        const parsed = JSON.parse(data.description);
-        if (parsed && Array.isArray(parsed.users)) {
+      if (!error && data) {
+        let parsed: any = null;
+        if (data.data_json && typeof data.data_json === 'object' && Array.isArray(data.data_json.users)) {
+          parsed = data.data_json;
+        } else if (data.description) {
+          try {
+            parsed = JSON.parse(data.description);
+          } catch {}
+        }
+
+        if (parsed && Array.isArray(parsed.users) && parsed.users.length > 0) {
           registry = {
             users: parsed.users,
-            deletedEmails: Array.isArray(parsed.deletedEmails) ? parsed.deletedEmails : ['marketing@bahiaprev.com.br'],
-            deletedUids: Array.isArray(parsed.deletedUids) ? parsed.deletedUids : ['u_lucas_mkt']
+            deletedEmails: Array.isArray(parsed.deletedEmails) ? parsed.deletedEmails : [],
+            deletedUids: Array.isArray(parsed.deletedUids) ? parsed.deletedUids : []
           };
           try {
             localStorage.setItem('bahiaprev_sys_users_registry', JSON.stringify(registry));
