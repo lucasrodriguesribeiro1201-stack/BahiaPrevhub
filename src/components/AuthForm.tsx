@@ -43,7 +43,7 @@ const eraseCookie = (name: string) => {
 };
 
 export const AuthForm: React.FC = () => {
-  const { login, providerNotEnabled } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -141,26 +141,6 @@ export const AuthForm: React.FC = () => {
           transition={{ duration: 0.3 }}
           className="bg-white py-8 px-4 shadow-xl border border-slate-200/60 rounded-2xl sm:px-10"
         >
-          {providerNotEnabled && (
-            <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium leading-relaxed">
-              <span className="font-bold block text-sm text-amber-800 mb-1.5">⚠️ Configuração Necessária no Firebase</span>
-              Para que você possa logar e para criarmos automaticamente seu usuário <span className="font-bold">lucasrodrigues@bahiaprev.com.br</span>, ative o método de login por e-mail no console do Firebase:
-              <ol className="list-decimal ml-4 mt-2 space-y-1 font-semibold">
-                <li>Abra o console do seu projeto Firebase.</li>
-                <li>Clique em <span className="font-bold text-amber-950">Authentication</span> no menu esquerdo.</li>
-                <li>Selecione a aba <span className="font-bold text-amber-950">Sign-in method</span> (Método de login).</li>
-                <li>Clique em <span className="font-bold text-amber-950">Adicionar provedor</span> e selecione <span className="font-bold text-amber-950">E-mail/Senha</span>.</li>
-                <li>Ative a opção principal e salve as alterações.</li>
-              </ol>
-              <button 
-                onClick={() => window.location.reload()}
-                className="mt-3.5 w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors cursor-pointer text-[11px]"
-              >
-                Já ativei! Recarregar Página
-              </button>
-            </div>
-          )}
-
           {error && (
             <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200/60 text-red-700 text-xs font-semibold leading-relaxed">
               {error}

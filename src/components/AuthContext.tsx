@@ -28,7 +28,6 @@ interface AuthContextType {
   user: AuthUser | null;
   profile: UserProfile | null;
   loading: boolean;
-  providerNotEnabled: boolean;
   allUsers: UserProfile[];
   usersMap: Record<string, UserProfile>;
   fetchUsers: () => Promise<UserProfile[]>;
@@ -48,7 +47,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [usersMap, setUsersMap] = useState<Record<string, UserProfile>>({});
   const [loading, setLoading] = useState(true);
-  const [providerNotEnabled] = useState(false);
 
   const fetchUsers = async (): Promise<UserProfile[]> => {
     try {
@@ -450,7 +448,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, providerNotEnabled, allUsers, usersMap, fetchUsers, login, signUp, logout, updateAvatarUrl, updateUserProfile, updatePassword }}>
+    <AuthContext.Provider value={{ user, profile, loading, allUsers, usersMap, fetchUsers, login, signUp, logout, updateAvatarUrl, updateUserProfile, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );
