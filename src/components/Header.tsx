@@ -33,13 +33,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenIn
   const hasFunerariaAccess = checkFunerariaAccess(profile, user?.email);
 
   const isLucas = Boolean(
-    !isFinanceiroOrCpd && (
-      profile?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-      profile?.email === 'marketing@bahiaprev.com.br' ||
-      profile?.name?.toLowerCase().includes('lucas') ||
-      user?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-      user?.email === 'marketing@bahiaprev.com.br'
-    )
+    (user?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br' ||
+    (profile?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br'
   );
 
   // When activeTab is 'home', hide the header module bar completely as requested

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { playNotificationSound } from '../utils/sound';
 import { useAuth } from './AuthContext';
 import { supabaseService } from '../lib/supabaseService';
@@ -28,7 +28,8 @@ import {
   Download,
   ExternalLink,
   File,
-  Upload
+  Upload,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SpellCheckInput, SpellCheckTextarea } from './SpellCheckField';
@@ -71,7 +72,7 @@ const CATEGORIES = [
 ];
 
 export const FeedSection: React.FC = () => {
-  const { user, profile, usersMap } = useAuth();
+  const { user, profile, usersMap, allUsers = [] } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -211,17 +212,14 @@ export const FeedSection: React.FC = () => {
   const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>({});
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [selectedAuthorUid, setSelectedAuthorUid] = useState<string | null>(null);
 
   // Fetch posts from Supabase
   const loadPostsFromSupabase = useCallback(async () => {
     try {
       const list = await supabaseService.fetchPosts();
       if (list) {
-        const realPosts = list.filter(p => 
-          !p.authorUid?.startsWith('admin-seed-') && 
-          p.content?.trim() !== 'Teste' && 
-          p.content?.trim() !== 'Aviso importante'
-        );
+        const realPosts = list.filter(p => !p.authorUid?.startsWith('admin-seed-'));
 
         if (knownPostIdsRef.current === null) {
           knownPostIdsRef.current = new Set(realPosts.map(p => p.id));
@@ -451,8 +449,69 @@ export const FeedSection: React.FC = () => {
     }
   };
 
+  // Derive unique list of authors who have published in the feed
+  const feedAuthors = useMemo(() => {
+    const authorMap = new Map<string, {
+      uid: string;
+      name: string;
+      role: string;
+      email?: string;
+      avatarUrl?: string;
+      postCount: number;
+      announcementCount: number;
+    }>();
+
+    posts.forEach(p => {
+      const uObj = (p.authorUid && usersMap[p.authorUid]) || allUsers.find(u => (p.authorUid && u.uid === p.authorUid) || (u.email && p.authorEmail && u.email.toLowerCase().trim() === p.authorEmail.toLowerCase().trim()));
+      const key = p.authorUid || p.authorEmail || p.authorName || 'desconhecido';
+      const name = formatUserName(uObj?.name || p.authorName, uObj?.email || p.authorEmail);
+      const role = uObj?.role || p.authorRole || 'Colaborador';
+      const avatarUrl = uObj?.avatarUrl || (p.authorUid === profile?.uid ? profile?.avatarUrl : undefined);
+
+      const existing = authorMap.get(key);
+      if (existing) {
+        existing.postCount += 1;
+        if (p.isAnnouncement || p.category === 'Comunicado') {
+          existing.announcementCount += 1;
+        }
+        if (!existing.avatarUrl && avatarUrl) {
+          existing.avatarUrl = avatarUrl;
+        }
+      } else {
+        authorMap.set(key, {
+          uid: key,
+          name,
+          role,
+          email: p.authorEmail,
+          avatarUrl,
+          postCount: 1,
+          announcementCount: (p.isAnnouncement || p.category === 'Comunicado') ? 1 : 0
+        });
+      }
+    });
+
+    return Array.from(authorMap.values()).sort((a, b) => b.postCount - a.postCount);
+  }, [posts, usersMap, allUsers, profile]);
+
+  const selectedAuthor = useMemo(() => {
+    if (!selectedAuthorUid) return null;
+    return feedAuthors.find(a => a.uid === selectedAuthorUid) || null;
+  }, [selectedAuthorUid, feedAuthors]);
+
   // Filter posts
   const filteredPosts = posts.filter(post => {
+    // 1. Author filter
+    if (selectedAuthorUid) {
+      const postKey = post.authorUid || post.authorEmail || post.authorName;
+      const matchUid = post.authorUid === selectedAuthorUid;
+      const matchEmail = post.authorEmail && post.authorEmail.toLowerCase().trim() === selectedAuthorUid.toLowerCase().trim();
+      const matchName = post.authorName && post.authorName.toLowerCase().trim() === selectedAuthorUid.toLowerCase().trim();
+      if (postKey !== selectedAuthorUid && !matchUid && !matchEmail && !matchName) {
+        return false;
+      }
+    }
+
+    // 2. Category filter
     if (selectedCategory === 'Todos') return true;
     if (selectedCategory === 'Comunicado') return post.category === 'Comunicado' || post.isAnnouncement;
     return post.category === selectedCategory;
@@ -647,6 +706,46 @@ export const FeedSection: React.FC = () => {
               );
             })}
           </div>
+
+          {/* Active Author Filter Banner */}
+          {selectedAuthor && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between p-3.5 bg-blue-50/90 border border-blue-200/80 rounded-2xl shadow-xs"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                {selectedAuthor.avatarUrl ? (
+                  <img
+                    src={selectedAuthor.avatarUrl}
+                    alt={selectedAuthor.name}
+                    className="h-9 w-9 rounded-full object-cover border-2 border-blue-500 shrink-0 shadow-xs"
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                    {selectedAuthor.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Filtro por Colaborador</span>
+                  </div>
+                  <h4 className="text-xs font-extrabold text-slate-900 truncate">
+                    Publicações de {selectedAuthor.name}
+                  </h4>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedAuthorUid(null)}
+                className="px-3 py-1.5 bg-white hover:bg-blue-100/70 text-blue-700 text-xs font-bold rounded-xl transition-all border border-blue-200 shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span>Ver Todos os Posts</span>
+              </button>
+            </motion.div>
+          )}
 
           {/* Posts Feed Stream */}
           {loading ? (
@@ -932,6 +1031,121 @@ export const FeedSection: React.FC = () => {
             <div className="pt-3 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-500">
               <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
               <span>Sua conta está ativa no Bahia Prev Hub</span>
+            </div>
+          </div>
+
+          {/* Feed Authors Widget (Filter feed by individual authors) */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                  <Users className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                    Publicadores do Feed
+                  </h4>
+                  <p className="text-[11px] text-slate-500">Clique para filtrar por pessoa</p>
+                </div>
+              </div>
+
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                {feedAuthors.length} {feedAuthors.length === 1 ? 'autor' : 'autores'}
+              </span>
+            </div>
+
+            {/* "Todos os Publicadores" Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedAuthorUid(null)}
+              className={`w-full p-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border cursor-pointer ${
+                selectedAuthorUid === null
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/70'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  selectedAuthorUid === null ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  ✨
+                </div>
+                <span>Todos os Publicadores</span>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                selectedAuthorUid === null ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-600'
+              }`}>
+                {posts.length}
+              </span>
+            </button>
+
+            {/* Authors List */}
+            <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+              {feedAuthors.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-100">
+                  Nenhum post publicado ainda
+                </div>
+              ) : (
+                feedAuthors.map((author) => {
+                  const isSelected = selectedAuthorUid === author.uid;
+                  return (
+                    <button
+                      key={author.uid}
+                      type="button"
+                      onClick={() => setSelectedAuthorUid(isSelected ? null : author.uid)}
+                      className={`w-full p-2.5 rounded-xl transition-all flex items-center justify-between border text-left cursor-pointer group ${
+                        isSelected
+                          ? 'bg-blue-50 border-blue-500 text-blue-900 shadow-xs ring-1 ring-blue-500/20'
+                          : 'bg-white hover:bg-slate-50/90 border-slate-200/70 text-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {author.avatarUrl ? (
+                          <img
+                            src={author.avatarUrl}
+                            alt={author.name}
+                            className={`h-8 w-8 rounded-full object-cover shrink-0 border ${
+                              isSelected ? 'border-blue-500 ring-2 ring-blue-400/30' : 'border-slate-200'
+                            }`}
+                          />
+                        ) : (
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                            isSelected ? 'bg-blue-600 text-white' : 'bg-slate-800 text-white'
+                          }`}>
+                            {author.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-bold truncate ${
+                            isSelected ? 'text-blue-950 font-extrabold' : 'text-slate-900 group-hover:text-blue-600'
+                          }`}>
+                            {author.name}
+                          </p>
+                          <p className="text-[10px] text-slate-500 truncate">{author.role}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        {author.announcementCount > 0 && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-md font-extrabold bg-red-100 text-red-700 flex items-center gap-0.5"
+                            title={`${author.announcementCount} Comunicado(s) Oficial(is)`}
+                          >
+                            📢 {author.announcementCount}
+                          </span>
+                        )}
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          isSelected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-700'
+                        }`}>
+                          {author.postCount}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 

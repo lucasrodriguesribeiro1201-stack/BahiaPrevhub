@@ -42,16 +42,20 @@ function MainAppContent() {
   const userRole = (profile?.role || '').trim().toLowerCase();
   const isFinanceiroOrCpd = userRole.includes('financeiro') || userRole.includes('cpd');
   const hasFunerariaAccess = checkFunerariaAccess(profile, user?.email);
+  const isLucasAdmin = Boolean(
+    (user?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br' ||
+    (profile?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br'
+  );
 
   // Redirect users away from restricted modules
   useEffect(() => {
     if (!hasFunerariaAccess && activeTab === 'funeraria') {
       setActiveTab('home');
     }
-    if (isFinanceiroOrCpd && activeTab === 'admin') {
+    if (!isLucasAdmin && activeTab === 'admin') {
       setActiveTab('home');
     }
-  }, [hasFunerariaAccess, isFinanceiroOrCpd, activeTab]);
+  }, [hasFunerariaAccess, isLucasAdmin, activeTab]);
 
   useEffect(() => {
     try {
@@ -219,7 +223,7 @@ function MainAppContent() {
               {activeTab === 'funeraria' && hasFunerariaAccess && <FunerariaSection />}
               {activeTab === 'about' && <AboutCompanySection />}
               {activeTab === 'install' && <InstallSection />}
-              {activeTab === 'admin' && !isFinanceiroOrCpd && <UserAdminSection />}
+              {activeTab === 'admin' && isLucasAdmin && <UserAdminSection />}
             </motion.div>
           </AnimatePresence>
         </ErrorBoundary>

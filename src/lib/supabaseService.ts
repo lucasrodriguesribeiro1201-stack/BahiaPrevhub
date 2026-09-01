@@ -531,7 +531,7 @@ export const supabaseService = {
         .from('posts')
         .select('*')
         .order('created_at_iso', { ascending: false })
-        .limit(50);
+        .limit(100);
       if (error) {
         console.warn('Erro ao buscar posts no Supabase:', error.message);
         return null;
@@ -540,6 +540,7 @@ export const supabaseService = {
         const { cleanContent, meta } = unpackPostMetadata(row.content || '');
         const dataJson = row.data_json && typeof row.data_json === 'object' ? row.data_json : {};
 
+        const content = cleanContent || dataJson.content || row.content || '';
         const category = row.category || dataJson.category || meta.category || (row.type === 'comunicado' || row.type === 'Comunicado' ? 'Comunicado' : (row.type || 'Geral'));
         const isAnnouncement = row.is_announcement !== undefined 
           ? Boolean(row.is_announcement) 
@@ -550,8 +551,8 @@ export const supabaseService = {
               : (category === 'Comunicado' || row.type === 'comunicado' || row.type === 'Comunicado')));
 
         const likedBy = Array.isArray(row.liked_by) ? row.liked_by : (Array.isArray(dataJson.likedBy) ? dataJson.likedBy : (Array.isArray(meta.likedBy) ? meta.likedBy : []));
-        const likesCount = row.likes_count ?? row.likes ?? meta.likesCount ?? likedBy.length;
-        const commentsCount = row.comments_count ?? meta.commentsCount ?? (Array.isArray(meta.comments) ? meta.comments.length : 0);
+        const likesCount = row.likes_count ?? row.likes ?? dataJson.likesCount ?? meta.likesCount ?? likedBy.length;
+        const commentsCount = row.comments_count ?? dataJson.commentsCount ?? meta.commentsCount ?? (Array.isArray(meta.comments) ? meta.comments.length : 0);
 
         return {
           id: row.id,
@@ -559,7 +560,7 @@ export const supabaseService = {
           authorEmail: row.author_email || dataJson.authorEmail || meta.authorEmail || '',
           authorName: row.author_name || dataJson.authorName || meta.authorName || '',
           authorRole: row.author_role || dataJson.authorRole || meta.authorRole || 'Colaborador',
-          content: cleanContent,
+          content: content,
           category: category,
           isAnnouncement: isAnnouncement,
           imageUrl: row.image_url || dataJson.imageUrl || meta.imageUrl || undefined,
@@ -569,7 +570,7 @@ export const supabaseService = {
           likesCount: likesCount,
           likedBy: likedBy,
           commentsCount: commentsCount,
-          comments: meta.comments || [],
+          comments: Array.isArray(dataJson.comments) ? dataJson.comments : (meta.comments || []),
           createdAtISO: row.created_at_iso
         };
       });
@@ -592,10 +593,37 @@ export const supabaseService = {
         author_name: post.authorName || post.author_name || '',
         author_role: post.authorRole || post.author_role || '',
         author_uid: post.authorUid || post.author_uid || '',
+        author_email: post.authorEmail || post.author_email || '',
         content: packedContent,
         type: post.category || post.type || (post.isAnnouncement ? 'Comunicado' : 'Geral'),
+        category: post.category || (post.isAnnouncement ? 'Comunicado' : 'Geral'),
+        is_announcement: Boolean(post.isAnnouncement || post.category === 'Comunicado'),
+        image_url: post.imageUrl || post.image_url || null,
+        attachment_url: post.attachmentUrl || post.attachment_url || null,
+        attachment_type: post.attachmentType || post.attachment_type || null,
+        attachment_name: post.attachmentName || post.attachment_name || null,
         likes: likesCount,
+        likes_count: likesCount,
         liked_by: likedBy,
+        comments_count: post.commentsCount || 0,
+        data_json: {
+          id: String(post.id),
+          authorUid: post.authorUid || post.author_uid || '',
+          authorEmail: post.authorEmail || post.author_email || '',
+          authorName: post.authorName || post.author_name || '',
+          authorRole: post.authorRole || post.author_role || '',
+          content: post.content || '',
+          category: post.category || (post.isAnnouncement ? 'Comunicado' : 'Geral'),
+          isAnnouncement: Boolean(post.isAnnouncement || post.category === 'Comunicado'),
+          imageUrl: post.imageUrl || post.image_url || null,
+          attachmentUrl: post.attachmentUrl || post.attachment_url || null,
+          attachmentType: post.attachmentType || post.attachment_type || null,
+          attachmentName: post.attachmentName || post.attachment_name || null,
+          likesCount: likesCount,
+          likedBy: likedBy,
+          commentsCount: post.commentsCount || 0,
+          createdAtISO: post.createdAtISO || post.createdAt || new Date().toISOString()
+        },
         created_at_iso: post.createdAtISO || post.createdAt || new Date().toISOString()
       };
 
@@ -899,6 +927,7 @@ export const supabaseService = {
         id: 'sys_users_registry',
         title: '__SYS_USERS_REGISTRY__',
         description: JSON.stringify(registry),
+        data_json: registry,
         category: 'System',
         assigned_to: 'system',
         status: 'concluida',

@@ -349,8 +349,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user || !profile) return;
     const updated = { ...profile, avatarUrl: url };
     setProfile(updated);
-    localStorage.setItem('bahiaprev_supabase_session_profile', JSON.stringify(updated));
+    try {
+      localStorage.setItem('bahiaprev_supabase_session_profile', JSON.stringify(updated));
+    } catch {}
+    await supabaseService.saveUserProfile(updated);
     await supabaseService.saveUser(updated);
+    await fetchUsers();
   };
 
   const updateUserProfile = async (data: { name?: string; role?: string; avatarUrl?: string }) => {

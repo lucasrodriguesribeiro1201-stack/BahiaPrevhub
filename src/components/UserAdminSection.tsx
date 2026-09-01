@@ -65,19 +65,13 @@ export const UserAdminSection: React.FC = () => {
     fetchUsers().catch(() => {});
   }, []);
 
-  // Verification: Admin access for Analista de Marketing / Administrator
+  // Verification: Exclusive access for lucasrodrigues@bahiaprev.com.br
   const isLucas = Boolean(
-    profile?.role === 'Administrador' ||
-    profile?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-    profile?.email === 'marketing@bahiaprev.com.br' ||
-    profile?.name?.toLowerCase().includes('lucas') ||
-    profile?.name?.toLowerCase().includes('analista') ||
-    user?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-    user?.email === 'marketing@bahiaprev.com.br' ||
-    user?.email === 'institutojairoqueiroz@gmail.com'
+    (user?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br' ||
+    (profile?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br'
   );
 
-  // Users list from Firestore
+  // Users list from Supabase
   const [usersList, setUsersList] = useState<ManagedUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,7 +103,7 @@ export const UserAdminSection: React.FC = () => {
   const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Subscribe to all users in Firestore
+  // Load all users from Supabase
   useEffect(() => {
     const loaded: ManagedUser[] = allUsers
       .filter(item => (item.email || '').toLowerCase().trim() !== 'marketing@bahiaprev.com.br')

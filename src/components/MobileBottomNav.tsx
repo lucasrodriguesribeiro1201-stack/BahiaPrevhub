@@ -35,16 +35,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ activeTab, onS
   const hasFunerariaAccess = checkFunerariaAccess(profile, user?.email);
 
   const isLucas = Boolean(
-    !isFinanceiroOrCpd && (
-      profile?.role === 'Administrador' ||
-      profile?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-      profile?.email === 'marketing@bahiaprev.com.br' ||
-      profile?.name?.toLowerCase().includes('lucas') ||
-      profile?.name?.toLowerCase().includes('analista') ||
-      user?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-      user?.email === 'marketing@bahiaprev.com.br' ||
-      user?.email === 'institutojairoqueiroz@gmail.com'
-    )
+    (user?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br' ||
+    (profile?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br'
   );
 
   const handleTabClick = (tab: TabType) => {

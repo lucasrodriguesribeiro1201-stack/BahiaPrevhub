@@ -150,16 +150,8 @@ export const HomePortal: React.FC<HomePortalProps> = ({ onSelectTab, onOpenProfi
   const [hoveredModule, setHoveredModule] = useState<ModuleCard | null>(null);
 
   const isAdmin = Boolean(
-    profile?.role === 'Administrador' ||
-    profile?.role === 'Analista de Marketing' ||
-    profile?.role === 'Diretor/Presidente' ||
-    profile?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-    profile?.email === 'marketing@bahiaprev.com.br' ||
-    profile?.name?.toLowerCase().includes('lucas') ||
-    profile?.name?.toLowerCase().includes('analista') ||
-    user?.email === 'lucasrodrigues@bahiaprev.com.br' ||
-    user?.email === 'marketing@bahiaprev.com.br' ||
-    user?.email === 'institutojairoqueiroz@gmail.com'
+    (user?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br' ||
+    (profile?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br'
   );
 
   const adminModule: ModuleCard = {
