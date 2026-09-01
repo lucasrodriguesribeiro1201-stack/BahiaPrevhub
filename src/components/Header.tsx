@@ -1,6 +1,19 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Megaphone, Handshake, Users, Radio, BookOpen, ListTodo, ArrowLeft, Home, Layers, ShieldCheck, Cross, Smartphone } from 'lucide-react';
+import { 
+  Sparkles, 
+  Handshake, 
+  Users, 
+  Radio, 
+  BookOpen, 
+  ListTodo, 
+  ArrowLeft, 
+  Home, 
+  ShieldCheck, 
+  Cross, 
+  Smartphone,
+  ChevronRight
+} from 'lucide-react';
 import { BahiaPrevLogo } from './BahiaPrevLogo';
 import { useAuth } from './AuthContext';
 import { checkFunerariaAccess } from '../utils/permissions';
@@ -13,17 +26,17 @@ interface HeaderProps {
   onOpenInstallModal?: () => void;
 }
 
-const TAB_NAMES: Record<TabType, { name: string; icon: React.ElementType; color: string }> = {
-  home: { name: 'Página Inicial', icon: Home, color: 'text-blue-400' },
-  feed: { name: 'Feed & Comunicados', icon: Radio, color: 'text-red-400' },
-  tasks: { name: 'Minhas Tarefas', icon: ListTodo, color: 'text-emerald-400' },
-  marketing: { name: 'Área de Marketing', icon: Handshake, color: 'text-purple-400' },
-  funeraria: { name: 'Gestão Funerária', icon: Cross, color: 'text-purple-400' },
-  pops: { name: 'Procedimentos POP', icon: BookOpen, color: 'text-cyan-400' },
-  members: { name: 'Nossa Equipe', icon: Users, color: 'text-rose-400' },
-  about: { name: 'Sobre Nós', icon: Sparkles, color: 'text-yellow-400' },
-  install: { name: 'Instalar App', icon: Smartphone, color: 'text-emerald-400' },
-  admin: { name: 'Gestão de Usuários', icon: ShieldCheck, color: 'text-indigo-400' },
+const TAB_NAMES: Record<TabType, { name: string; shortName: string; icon: React.ElementType; color: string }> = {
+  home: { name: 'Página Inicial', shortName: 'Início', icon: Home, color: 'text-blue-400' },
+  feed: { name: 'Feed & Comunicados', shortName: 'Feed', icon: Radio, color: 'text-red-400' },
+  tasks: { name: 'Minhas Tarefas', shortName: 'Tarefas', icon: ListTodo, color: 'text-emerald-400' },
+  marketing: { name: 'Área de Marketing', shortName: 'Marketing', icon: Handshake, color: 'text-purple-400' },
+  funeraria: { name: 'Gestão Funerária', shortName: 'Funerária', icon: Cross, color: 'text-purple-400' },
+  pops: { name: 'Procedimentos POP', shortName: 'POP', icon: BookOpen, color: 'text-cyan-400' },
+  members: { name: 'Nossa Equipe', shortName: 'Equipe', icon: Users, color: 'text-rose-400' },
+  about: { name: 'Sobre Nós', shortName: 'Sobre', icon: Sparkles, color: 'text-yellow-400' },
+  install: { name: 'Instalar App', shortName: 'Instalar', icon: Smartphone, color: 'text-emerald-400' },
+  admin: { name: 'Gestão de Usuários', shortName: 'Usuários', icon: ShieldCheck, color: 'text-indigo-400' },
 };
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenInstallModal }) => {
@@ -37,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenIn
     (profile?.email || '').toLowerCase().trim() === 'lucasrodrigues@bahiaprev.com.br'
   );
 
-  // When activeTab is 'home', hide the header module bar completely as requested
+  // When activeTab is 'home', hide the header module bar completely
   if (activeTab === 'home') {
     return null;
   }
@@ -45,193 +58,108 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenIn
   const handleTabSelect = (tab: TabType) => {
     try {
       window.scrollTo(0, 0);
-    } catch {
-      // safe fallback
-    }
+    } catch {}
     onTabChange(tab);
   };
 
   const currentTabInfo = TAB_NAMES[activeTab] || TAB_NAMES.feed;
   const Icon = currentTabInfo.icon;
 
+  const tabsList: { id: TabType; label: string; icon: React.ElementType; color: string; special?: boolean }[] = [
+    { id: 'feed', label: 'Feed & Comunicados', icon: Radio, color: 'text-red-400' },
+    { id: 'tasks', label: 'Tarefas', icon: ListTodo, color: 'text-emerald-400' },
+    { id: 'marketing', label: 'Marketing', icon: Handshake, color: 'text-purple-400' },
+    ...(hasFunerariaAccess ? [{ id: 'funeraria' as TabType, label: 'Gestão Funerária', icon: Cross, color: 'text-purple-400' }] : []),
+    { id: 'pops', label: 'POP', icon: BookOpen, color: 'text-cyan-400' },
+    { id: 'members', label: 'Equipe', icon: Users, color: 'text-rose-400' },
+    { id: 'about', label: 'Sobre', icon: Sparkles, color: 'text-yellow-400' },
+    ...(isLucas && !isFinanceiroOrCpd ? [{ id: 'admin' as TabType, label: 'Usuários', icon: ShieldCheck, color: 'text-indigo-400', special: true }] : []),
+    { id: 'install', label: 'Instalar App', icon: Smartphone, color: 'text-emerald-400' },
+  ];
+
   return (
-    <header className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 py-4 sm:py-6 px-3 sm:px-6 lg:px-8 text-white border-b border-slate-800 shadow-xl">
-      {/* Subtle background grid */}
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-20" />
+    <header className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800 shadow-2xl">
+      {/* Top accent line */}
+      <div className="h-0.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-400" />
 
-      <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
-        
-        {/* Left: Voltar à Página Inicial + Breadcrumb & Logo */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
-          {/* Voltar Botão (Apenas em desktop/telas médias ou maiores) */}
-          <button
-            onClick={() => handleTabSelect('home')}
-            className="hidden sm:flex px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg transition-all items-center justify-center gap-2 cursor-pointer shrink-0 border border-blue-400/30 group w-full sm:w-auto"
-            title="Voltar para a Página Inicial"
-          >
-            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            <span>← Voltar para Página Inicial</span>
-          </button>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-4">
+          
+          {/* Left Side: Back Button + Logo + Breadcrumb & Current Title */}
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 min-w-0">
+            {/* Back Button */}
+            <button
+              onClick={() => handleTabSelect('home')}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0 border border-blue-400/40 group"
+              title="Voltar para a Página Inicial"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+              <span>Início</span>
+            </button>
 
-          <div className="h-6 w-px bg-slate-800 hidden sm:block" />
+            <div className="h-5 w-px bg-slate-800 hidden sm:block shrink-0" />
 
-          {/* Logo & Current Page Breadcrumb */}
-          <div className="flex items-center gap-3">
-            <div onClick={() => handleTabSelect('home')} className="cursor-pointer shrink-0">
-              <BahiaPrevLogo className="h-8 sm:h-10 w-auto hover:opacity-90 transition-opacity" />
+            {/* Logo */}
+            <div 
+              onClick={() => handleTabSelect('home')} 
+              className="cursor-pointer shrink-0 hidden sm:block hover:opacity-90 transition-opacity"
+            >
+              <BahiaPrevLogo className="h-7 w-auto" />
             </div>
-            
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
-                <span 
-                  onClick={() => handleTabSelect('home')}
-                  className="hover:text-blue-300 cursor-pointer transition-colors flex items-center gap-1 shrink-0"
-                >
-                  <Home className="h-3 w-3" />
-                  Início
-                </span>
-                <span>/</span>
-                <span className="text-slate-200 font-semibold truncate">{currentTabInfo.name}</span>
+
+            {/* Current Module Title & Breadcrumbs */}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-7 w-7 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
+                <Icon className={`h-4 w-4 ${currentTabInfo.color}`} />
               </div>
-              <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 truncate">
-                <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${currentTabInfo.color} shrink-0`} />
-                <span className="truncate">{currentTabInfo.name}</span>
-              </h1>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium leading-none mb-0.5">
+                  <span 
+                    onClick={() => handleTabSelect('home')}
+                    className="hover:text-blue-300 cursor-pointer transition-colors"
+                  >
+                    Início
+                  </span>
+                  <ChevronRight className="h-2.5 w-2.5 text-slate-600" />
+                  <span className="text-slate-300 truncate font-semibold">
+                    {currentTabInfo.name}
+                  </span>
+                </div>
+                <h1 className="text-sm sm:text-base font-black text-white tracking-tight leading-none truncate">
+                  {currentTabInfo.name}
+                </h1>
+              </div>
             </div>
           </div>
+
+          {/* Right Side: Clean Horizontal Modules Navigation Bar (Scrollable if needed, never overlaps) */}
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none bg-slate-900/80 p-1 sm:p-1.5 rounded-xl border border-slate-800/80 max-w-full">
+            {tabsList.map((item) => {
+              const ItemIcon = item.icon;
+              const isActive = activeTab === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabSelect(item.id)}
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-md border border-blue-400/40'
+                      : item.special
+                      ? 'text-indigo-300 bg-indigo-950/40 border border-indigo-500/30 hover:bg-indigo-900/50 hover:text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/90 border border-transparent'
+                  }`}
+                >
+                  <ItemIcon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-white' : item.color}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
         </div>
-
-        {/* Right: Quick Page Navigation Switcher (Apenas em Desktop) */}
-        <div className="hidden md:flex items-center gap-1 sm:gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 shrink-0">
-          <button
-            onClick={() => handleTabSelect('feed')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'feed'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Radio className="h-3.5 w-3.5 text-red-400" />
-            <span>Feed & Comunicados</span>
-          </button>
-
-          <button
-            onClick={() => handleTabSelect('tasks')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'tasks'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <ListTodo className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Tarefas</span>
-          </button>
-
-          <button
-            onClick={() => handleTabSelect('marketing')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'marketing'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Handshake className="h-3.5 w-3.5 text-purple-400" />
-            <span>Marketing</span>
-          </button>
-
-          {hasFunerariaAccess && (
-            <button
-              onClick={() => handleTabSelect('funeraria')}
-              className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'funeraria'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Cross className="h-3.5 w-3.5 text-purple-400" />
-              <span>Gestão Funerária</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => handleTabSelect('pops')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'pops'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <BookOpen className="h-3.5 w-3.5 text-cyan-400" />
-            <span>POP</span>
-          </button>
-
-          <button
-            onClick={() => handleTabSelect('members')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'members'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Users className="h-3.5 w-3.5 text-rose-400" />
-            <span>Equipe</span>
-          </button>
-
-          <button
-            onClick={() => handleTabSelect('about')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'about'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
-            <span>Sobre</span>
-          </button>
-
-          <button
-            onClick={() => handleTabSelect('install')}
-            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap border ${
-              activeTab === 'install'
-                ? 'bg-emerald-600 text-white border-emerald-400 shadow-md'
-                : 'text-emerald-300 bg-emerald-950/60 border-emerald-500/40 hover:text-white hover:bg-emerald-900'
-            }`}
-          >
-            <Smartphone className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Instalar App</span>
-          </button>
-
-          {isLucas && (
-            <button
-              onClick={() => handleTabSelect('admin')}
-              className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap border ${
-                activeTab === 'admin'
-                  ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
-                  : 'text-indigo-300 bg-indigo-950/60 border-indigo-500/40 hover:text-white hover:bg-indigo-900'
-              }`}
-            >
-              <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
-              <span>Gestão Usuários</span>
-            </button>
-          )}
-
-          {onOpenInstallModal && (
-            <button
-              onClick={onOpenInstallModal}
-              className="px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shadow-sm ml-auto"
-              title="Instalar Bahia Prev no iPhone / Celular"
-            >
-              <Smartphone className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Instalar App</span>
-            </button>
-          )}
-        </div>
-
       </div>
     </header>
   );
 };
-
-
-
-

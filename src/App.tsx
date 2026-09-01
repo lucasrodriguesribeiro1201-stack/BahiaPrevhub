@@ -163,15 +163,6 @@ function MainAppContent() {
               <span>Alterar Foto</span>
             </button>
 
-            {activeTab !== 'home' && (
-              <button
-                onClick={() => setActiveTab('home')}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm border border-blue-400/30"
-              >
-                <Home className="h-3.5 w-3.5 text-blue-200" />
-                <span>Página Inicial</span>
-              </button>
-            )}
 
             <span className="hidden md:inline text-slate-400 font-normal">
               E-mail: <strong className="text-slate-200 font-medium">{user?.email}</strong>
@@ -237,7 +228,7 @@ function MainAppContent() {
       />
 
       {/* Main Footer */}
-      <Footer onScrollToTop={handleScrollToTop} />
+      <Footer onScrollToTop={handleScrollToTop} onSelectTab={setActiveTab} />
 
       {/* Modals */}
       <AnimatePresence>

@@ -24,6 +24,7 @@ import { BahiaPrevLogo } from './BahiaPrevLogo';
 import { checkFunerariaAccess } from '../utils/permissions';
 import { formatUserName } from '../utils/userNameFormatter';
 import { DailyMotivationalQuote } from './DailyMotivationalQuote';
+import { OnlineTeamButton } from './OnlineTeamButton';
 
 export type TabType = 'home' | 'feed' | 'pops' | 'marketing' | 'funeraria' | 'about' | 'members' | 'tasks' | 'admin' | 'install';
 
@@ -189,9 +190,10 @@ export const HomePortal: React.FC<HomePortalProps> = ({ onSelectTab, onOpenProfi
         <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto relative flex flex-col items-center text-center">
-          {/* Daily Motivational Quote Card (Positioned on the Left where circled on Desktop, and centered at top on Mobile) */}
-          <div className="w-full lg:w-auto lg:absolute lg:left-0 lg:top-0 lg:max-w-xs xl:max-w-sm mb-4 lg:mb-0 z-20 flex justify-center lg:justify-start">
+          {/* Left Column: Daily Motivational Quote & Online Team Button (Positioned on the Left where circled on Desktop) */}
+          <div className="w-full lg:w-auto lg:absolute lg:left-0 lg:top-0 lg:max-w-xs xl:max-w-sm mb-4 lg:mb-0 z-20 flex flex-col items-center lg:items-start gap-2.5">
             <DailyMotivationalQuote className="w-full max-w-sm sm:max-w-md lg:max-w-xs xl:max-w-sm" />
+            <OnlineTeamButton className="w-full max-w-sm sm:max-w-md lg:max-w-xs xl:max-w-sm" />
           </div>
 
           <motion.div
