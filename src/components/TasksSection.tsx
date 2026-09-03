@@ -1105,7 +1105,7 @@ export const TasksSection: React.FC = () => {
 
     if (task.assignedToType === 'all') {
       setEditRecipient('all');
-    } else if (task.assignedToType === 'me' || task.assignedToEmail === userEmail) {
+    } else if (task.assignedToType === 'me' && (task.userEmail === userEmail || task.assignedToEmail === userEmail)) {
       setEditRecipient('me');
     } else if (task.assignedToEmail) {
       setEditRecipient(task.assignedToEmail);
@@ -1292,14 +1292,21 @@ export const TasksSection: React.FC = () => {
     const assignedName = (task.assignedToName || '').toLowerCase().trim();
     const completedEmail = (task.completedByEmail || '').toLowerCase().trim();
     const completedName = (task.completedByName || '').toLowerCase().trim();
+    const creatorEmail = (task.userEmail || '').toLowerCase().trim();
+    const creatorUid = task.userId;
 
     const isMeLucas = isLucasUser(myEmail, myName);
     const isAssignedLucas = isLucasUser(assignedEmail, assignedName);
 
-    // If explicitly assigned to another specific user (collaborator), it does NOT belong to me
-    if (task.assignedToType === 'specific_user') {
+    // 1. If assigned to everyone, it belongs to everyone
+    if (task.assignedToType === 'all' || assignedEmail === 'todos@bahiaprev.com.br' || assignedName.includes('todos')) {
+      return true;
+    }
+
+    // 2. If explicitly assigned to another specific user (different email and different name), it does NOT belong to me
+    if (task.assignedToType === 'specific_user' || assignedEmail) {
       if (isMeLucas && isAssignedLucas) {
-        // Belongs to me
+        // Belongs to Lucas
       } else {
         const isAssignedToOtherEmail = assignedEmail && myEmail && assignedEmail !== myEmail;
         const isAssignedToOtherName = assignedName && myName && !assignedName.includes(myName) && !myName.includes(assignedName);
@@ -1309,9 +1316,17 @@ export const TasksSection: React.FC = () => {
       }
     }
 
-    // Check if task is assigned to me or completed by me
+    // 3. If task was assigned to "me" (mim mesmo) by the creator:
+    // Only belongs to the current user if the current user IS the one who created/assigned it to themselves
     if (task.assignedToType === 'me') {
-      return true;
+      const isCreatorMe = (creatorEmail && myEmail && (creatorEmail === myEmail || creatorEmail.includes(myEmail) || myEmail.includes(creatorEmail))) ||
+                          (userId && creatorUid && creatorUid === userId);
+      const isAssignedMe = (assignedEmail && myEmail && (assignedEmail === myEmail || assignedEmail.includes(myEmail) || myEmail.includes(assignedEmail))) ||
+                           (isMeLucas && isAssignedLucas);
+      if (isCreatorMe || isAssignedMe) {
+        return true;
+      }
+      return false;
     }
 
     if (isMeLucas && isAssignedLucas) {

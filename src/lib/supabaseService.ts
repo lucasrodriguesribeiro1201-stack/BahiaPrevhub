@@ -250,7 +250,7 @@ export const supabaseService = {
           }
         }
 
-        let createdName = meta.createdByName || row.created_by || 'Lucas Rodrigues';
+        let createdName = meta.createdByName || row.created_by || 'Colaborador';
         let creatorEmail = meta.userEmail || '';
         const rawCreator = (row.created_by || '').toLowerCase().trim();
 
@@ -335,7 +335,7 @@ export const supabaseService = {
       const packedDescription = packTaskMetadata(task.description || '', task);
 
       const assignedDisplay = task.assignedToName || task.assignedToEmail || task.assignedTo || (task.assignedToType === 'all' ? 'Todos os Colaboradores' : 'Colaborador');
-      const creatorDisplay = task.createdByName || task.userEmail || 'Lucas Rodrigues (Administrador)';
+      const creatorDisplay = task.createdByName || task.userEmail || 'Colaborador';
 
       const payload: any = {
         id: String(task.id),
