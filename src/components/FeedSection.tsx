@@ -251,21 +251,10 @@ export const FeedSection: React.FC = () => {
       if (!document.hidden) {
         loadPostsFromSupabase();
       }
-    }, 15000);
-
-    const handleFocus = () => {
-      if (!document.hidden) {
-        loadPostsFromSupabase();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
+    }, 60000);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, [loadPostsFromSupabase]);
 

@@ -359,19 +359,8 @@ export const SatisfactionSurveySection: React.FC<SatisfactionSurveySectionProps>
       }
     }, 15000);
 
-    const handleFocus = () => {
-      if (!document.hidden) {
-        loadSurveysFromSupabase();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
     return () => {
       clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, [loadSurveysFromSupabase]);
 

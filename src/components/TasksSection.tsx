@@ -789,26 +789,15 @@ export const TasksSection: React.FC = () => {
 
     loadTasksFromSupabase();
 
-    // Smart polling: every 15 seconds, only when tab is visible
+    // Smart polling: every 30 seconds, only when tab is visible
     const interval = setInterval(() => {
       if (!document.hidden) {
         loadTasksFromSupabase();
       }
-    }, 15000);
-
-    const handleFocus = () => {
-      if (!document.hidden) {
-        loadTasksFromSupabase();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
+    }, 30000);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, [userId, loadTasksFromSupabase, isTargetedToUser]);
 

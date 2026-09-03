@@ -319,19 +319,8 @@ export const FunerariaSection: React.FC = () => {
       }
     }, 15000);
 
-    const handleFocus = () => {
-      if (!document.hidden) {
-        loadOrdersFromSupabase();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
     return () => {
       clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, [loadOrdersFromSupabase]);
 
