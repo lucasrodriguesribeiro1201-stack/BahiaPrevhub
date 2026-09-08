@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './AuthContext';
 import { SpellCheckInput, SpellCheckTextarea } from './SpellCheckField';
 import { supabaseService } from '../lib/supabaseService';
+import { getSupabaseClient } from '../lib/supabase';
 import { formatUserName } from '../utils/userNameFormatter';
 
 export interface AttachmentItem {
@@ -800,6 +801,137 @@ export const TasksSection: React.FC = () => {
       clearInterval(interval);
     };
   }, [userId, loadTasksFromSupabase, isTargetedToUser]);
+
+  // Keep fresh refs for Realtime callback without triggering resubscriptions
+  const isTargetedToUserRef = useRef(isTargetedToUser);
+  isTargetedToUserRef.current = isTargetedToUser;
+  const userIdRef = useRef(userId);
+  userIdRef.current = userId;
+
+  // Supabase Realtime subscription for user_tasks (PASSO 6: ETAPAS 2 a 10)
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    const channelName = `user_tasks_realtime_${userId}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_tasks'
+        },
+        async (payload: any) => {
+          // ETAPA 3: Ignorar registros de sistema (sys_*)
+          const recordId = (payload.new as any)?.id || (payload.old as any)?.id;
+          if (!recordId || typeof recordId !== 'string' || recordId.startsWith('sys_')) {
+            return;
+          }
+
+          // ETAPA 5: DELETE — Sem consulta ao Supabase
+          if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as any)?.id || recordId;
+            if (knownTaskIdsRef.current) {
+              knownTaskIdsRef.current.delete(deletedId);
+            }
+            if (knownTaskStatusesRef.current) {
+              knownTaskStatusesRef.current.delete(deletedId);
+            }
+            setTasks((prev) => {
+              const updated = prev.filter((t) => t.id !== deletedId);
+              if (updated.length !== prev.length) {
+                safeSaveTasksLocally(userId, updated);
+                return updated;
+              }
+              return prev;
+            });
+            return;
+          }
+
+          // ETAPA 4 & 6: INSERT ou UPDATE — Consulta pontual de apenas UMA tarefa (11 colunas, sem data_json)
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            try {
+              const task = await supabaseService.fetchTaskById(recordId);
+              if (!task) return;
+
+              // Verificar se a tarefa deve ser visível para o usuário atual
+              if (!isTargetedToUserRef.current(task)) {
+                // Se a tarefa não pertence/deixou de pertencer ao usuário, remove do estado local
+                setTasks((prev) => {
+                  const updated = prev.filter((t) => t.id !== task.id);
+                  if (updated.length !== prev.length) {
+                    safeSaveTasksLocally(userId, updated);
+                    return updated;
+                  }
+                  return prev;
+                });
+                return;
+              }
+
+              // Notificações sonoras e toast
+              const prevStatus = knownTaskStatusesRef.current?.get(task.id);
+              const isNewlyCompleted = prevStatus && prevStatus !== 'concluida' && task.status === 'concluida';
+              const isNewForMe = !knownTaskIdsRef.current?.has(task.id) && task.userId !== userIdRef.current;
+
+              if (isNewlyCompleted) {
+                playNotificationSound('task_complete');
+                triggerCompletionToast(task.title, task.completedByName || task.assignedToName);
+              } else if (isNewForMe) {
+                playNotificationSound('task');
+              }
+
+              if (!knownTaskIdsRef.current) {
+                knownTaskIdsRef.current = new Set();
+              }
+              knownTaskIdsRef.current.add(task.id);
+
+              if (!knownTaskStatusesRef.current) {
+                knownTaskStatusesRef.current = new Map();
+              }
+              knownTaskStatusesRef.current.set(task.id, task.status);
+
+              // ETAPA 8: Deduplicação e Upsert local baseado em task.id
+              setTasks((prev) => {
+                const index = prev.findIndex((t) => t.id === task.id);
+                let next: Task[];
+                if (index >= 0) {
+                  next = prev.map((t) => (t.id === task.id ? task : t));
+                } else {
+                  next = [task, ...prev];
+                }
+
+                // Ordenar decrescente por createdAt
+                next.sort((a, b) => {
+                  const timeA = new Date(a.createdAt || 0).getTime();
+                  const timeB = new Date(b.createdAt || 0).getTime();
+                  return timeB - timeA;
+                });
+
+                safeSaveTasksLocally(userId, next);
+                return next;
+              });
+            } catch (err) {
+              console.warn('[Realtime] Erro ao sincronizar alteração de tarefa:', err);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[Realtime Tasks] Status da conexão: ${status}`);
+        }
+      });
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch (err) {
+        console.warn('Erro ao remover canal Realtime de tarefas:', err);
+      }
+    };
+  }, [userId, safeSaveTasksLocally, triggerCompletionToast]);
 
   // Handle Create Task
   const handleCreateTask = async (e: React.FormEvent) => {

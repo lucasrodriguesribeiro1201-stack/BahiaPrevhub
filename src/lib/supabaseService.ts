@@ -125,6 +125,114 @@ export function unpackPostMetadata(content: string): { cleanContent: string; met
   return { cleanContent: content, meta: {} };
 }
 
+// Helper to map a user_tasks DB row to a Task object
+export function mapRowToTask(row: any): any {
+  const { cleanDescription, meta } = unpackTaskMetadata(row.description || '');
+
+  let assignedName = meta.assignedToName || row.assigned_to || '';
+  let assignedEmail = meta.assignedToEmail || '';
+  const rawAssigned = (row.assigned_to || '').toLowerCase().trim();
+
+  // Auto-resolve known collaborator emails if missing
+  if (!assignedEmail) {
+    if (rawAssigned.includes('@')) {
+      assignedEmail = row.assigned_to;
+    } else if (rawAssigned.includes('cauan')) {
+      assignedName = 'Cauan';
+      assignedEmail = 'cauan@bahiaprev.com.br';
+    } else if (rawAssigned.includes('lucas') || rawAssigned.includes('marketing')) {
+      assignedName = 'Lucas Rodrigues';
+      assignedEmail = 'lucasrodrigues@bahiaprev.com.br';
+    } else if (rawAssigned.includes('jairo')) {
+      assignedName = 'Jairo Queiroz';
+      assignedEmail = 'jairoqueiroz@bahiaprev.com.br';
+    } else if (rawAssigned.includes('nilton')) {
+      assignedName = 'Nilton';
+      assignedEmail = 'nilton@bahiaprev.com.br';
+    } else if (rawAssigned.includes('thay')) {
+      assignedName = 'Thayan';
+      assignedEmail = 'thayan@bahiaprev.com.br';
+    } else if (rawAssigned.includes('vitor')) {
+      assignedName = 'Vitor';
+      assignedEmail = 'vitor@bahiaprev.com.br';
+    } else if (rawAssigned.includes('paulo')) {
+      assignedName = 'Paulo';
+      assignedEmail = 'paulo@bahiaprev.com.br';
+    }
+  }
+
+  let createdName = meta.createdByName || row.created_by || 'Colaborador';
+  let creatorEmail = meta.userEmail || '';
+  const rawCreator = (row.created_by || '').toLowerCase().trim();
+
+  if (!creatorEmail) {
+    if (rawCreator.includes('@')) {
+      creatorEmail = row.created_by;
+    } else if (rawCreator.includes('lucas') || rawCreator.includes('marketing')) {
+      createdName = 'Lucas Rodrigues (Analista de Marketing)';
+      creatorEmail = 'lucasrodrigues@bahiaprev.com.br';
+    } else if (rawCreator.includes('jairo')) {
+      createdName = 'Jairo Queiroz (Diretor)';
+      creatorEmail = 'jairoqueiroz@bahiaprev.com.br';
+    } else if (rawCreator.includes('nilton')) {
+      createdName = 'Nilton (Colaborador)';
+      creatorEmail = 'nilton@bahiaprev.com.br';
+    }
+  }
+
+  let assignedType: 'specific_user' | 'all' | 'me' = meta.assignedToType || (rawAssigned === 'all' || rawAssigned.includes('todos') ? 'all' : (rawAssigned === 'me' ? 'me' : 'specific_user'));
+
+  if (row.data_json && typeof row.data_json === 'object') {
+    return {
+      id: row.id,
+      ...row.data_json,
+      title: row.title || row.data_json.title,
+      description: cleanDescription || row.data_json.description || '',
+      category: row.category || row.data_json.category || 'Geral',
+      priority: row.priority || row.data_json.priority || 'media',
+      status: row.status || row.data_json.status || 'pendente',
+      dueDate: row.due_date || row.data_json.dueDate || '',
+      assignedToType: row.data_json.assignedToType || assignedType,
+      assignedToName: row.data_json.assignedToName || assignedName,
+      assignedToEmail: row.data_json.assignedToEmail || assignedEmail,
+      createdByName: row.data_json.createdByName || createdName,
+      userEmail: row.data_json.userEmail || creatorEmail,
+      userId: row.data_json.userId || meta.userId || '',
+      createdAt: row.created_at_iso || row.data_json.createdAt || new Date().toISOString(),
+    };
+  }
+
+  return {
+    id: row.id,
+    userId: meta.userId || '',
+    userEmail: creatorEmail,
+    createdByName: createdName,
+    title: row.title || '',
+    description: cleanDescription,
+    category: row.category || 'Geral',
+    priority: (row.priority as any) || 'media',
+    status: (row.status as any) || (row.completed ? 'concluida' : 'pendente'),
+    dueDate: row.due_date || '',
+    assignedToType: assignedType,
+    assignedToName: assignedName,
+    assignedToEmail: assignedEmail,
+    createdByAdmin: meta.createdByAdmin || false,
+    attachments: meta.attachments || [],
+    attachmentName: meta.attachments?.[0]?.name,
+    attachmentUrl: meta.attachments?.[0]?.url,
+    attachmentType: meta.attachments?.[0]?.type,
+    completionAttachments: meta.completionAttachments || [],
+    completionAttachmentName: meta.completionAttachments?.[0]?.name,
+    completionAttachmentUrl: meta.completionAttachments?.[0]?.url,
+    completionAttachmentType: meta.completionAttachments?.[0]?.type,
+    completionNote: meta.completionNote,
+    completedAt: meta.completedAt || (row.completed ? row.created_at_iso : undefined),
+    completedByEmail: meta.completedByEmail,
+    completedByName: meta.completedByName,
+    createdAt: row.created_at_iso || new Date().toISOString(),
+  };
+}
+
 export const supabaseService = {
   // 1. FUNERARIA OS
   async fetchOrders(): Promise<any[] | null> {
@@ -194,7 +302,19 @@ export const supabaseService = {
       // Filter out system config rows (id starting with 'sys_') directly at DB query level to avoid heavy payloads and statement timeouts
       let res = await supabase
         .from('user_tasks')
-        .select('*')
+        .select(`
+          id,
+          title,
+          description,
+          category,
+          assigned_to,
+          priority,
+          status,
+          due_date,
+          completed,
+          created_by,
+          created_at_iso
+        `)
         .not('id', 'like', 'sys_%')
         .order('created_at_iso', { ascending: false })
         .limit(150);
@@ -203,7 +323,19 @@ export const supabaseService = {
         console.warn('Filtro ordenado falhou no Supabase, tentando fallback sem ordenação:', res.error.message);
         res = await supabase
           .from('user_tasks')
-          .select('*')
+          .select(`
+            id,
+            title,
+            description,
+            category,
+            assigned_to,
+            priority,
+            status,
+            due_date,
+            completed,
+            created_by,
+            created_at_iso
+          `)
           .not('id', 'like', 'sys_%')
           .limit(150);
       }
@@ -215,114 +347,42 @@ export const supabaseService = {
       }
 
       const taskRows = (data || []).filter((row: any) => row.id !== 'sys_team_roles_config' && row.title !== '__SYS_ROLES_CONFIG__' && row.id !== 'sys_users_registry');
-      return taskRows.map((row: any) => {
-        const { cleanDescription, meta } = unpackTaskMetadata(row.description || '');
-
-        let assignedName = meta.assignedToName || row.assigned_to || '';
-        let assignedEmail = meta.assignedToEmail || '';
-        const rawAssigned = (row.assigned_to || '').toLowerCase().trim();
-
-        // Auto-resolve known collaborator emails if missing
-        if (!assignedEmail) {
-          if (rawAssigned.includes('@')) {
-            assignedEmail = row.assigned_to;
-          } else if (rawAssigned.includes('cauan')) {
-            assignedName = 'Cauan';
-            assignedEmail = 'cauan@bahiaprev.com.br';
-          } else if (rawAssigned.includes('lucas') || rawAssigned.includes('marketing')) {
-            assignedName = 'Lucas Rodrigues';
-            assignedEmail = 'lucasrodrigues@bahiaprev.com.br';
-          } else if (rawAssigned.includes('jairo')) {
-            assignedName = 'Jairo Queiroz';
-            assignedEmail = 'jairoqueiroz@bahiaprev.com.br';
-          } else if (rawAssigned.includes('nilton')) {
-            assignedName = 'Nilton';
-            assignedEmail = 'nilton@bahiaprev.com.br';
-          } else if (rawAssigned.includes('thay')) {
-            assignedName = 'Thayan';
-            assignedEmail = 'thayan@bahiaprev.com.br';
-          } else if (rawAssigned.includes('vitor')) {
-            assignedName = 'Vitor';
-            assignedEmail = 'vitor@bahiaprev.com.br';
-          } else if (rawAssigned.includes('paulo')) {
-            assignedName = 'Paulo';
-            assignedEmail = 'paulo@bahiaprev.com.br';
-          }
-        }
-
-        let createdName = meta.createdByName || row.created_by || 'Colaborador';
-        let creatorEmail = meta.userEmail || '';
-        const rawCreator = (row.created_by || '').toLowerCase().trim();
-
-        if (!creatorEmail) {
-          if (rawCreator.includes('@')) {
-            creatorEmail = row.created_by;
-          } else if (rawCreator.includes('lucas') || rawCreator.includes('marketing')) {
-            createdName = 'Lucas Rodrigues (Analista de Marketing)';
-            creatorEmail = 'lucasrodrigues@bahiaprev.com.br';
-          } else if (rawCreator.includes('jairo')) {
-            createdName = 'Jairo Queiroz (Diretor)';
-            creatorEmail = 'jairoqueiroz@bahiaprev.com.br';
-          } else if (rawCreator.includes('nilton')) {
-            createdName = 'Nilton (Colaborador)';
-            creatorEmail = 'nilton@bahiaprev.com.br';
-          }
-        }
-
-        let assignedType: 'specific_user' | 'all' | 'me' = meta.assignedToType || (rawAssigned === 'all' || rawAssigned.includes('todos') ? 'all' : (rawAssigned === 'me' ? 'me' : 'specific_user'));
-
-        if (row.data_json && typeof row.data_json === 'object') {
-          return {
-            id: row.id,
-            ...row.data_json,
-            title: row.title || row.data_json.title,
-            description: cleanDescription || row.data_json.description || '',
-            category: row.category || row.data_json.category || 'Geral',
-            priority: row.priority || row.data_json.priority || 'media',
-            status: row.status || row.data_json.status || 'pendente',
-            dueDate: row.due_date || row.data_json.dueDate || '',
-            assignedToType: row.data_json.assignedToType || assignedType,
-            assignedToName: row.data_json.assignedToName || assignedName,
-            assignedToEmail: row.data_json.assignedToEmail || assignedEmail,
-            createdByName: row.data_json.createdByName || createdName,
-            userEmail: row.data_json.userEmail || creatorEmail,
-            userId: row.data_json.userId || meta.userId || '',
-            createdAt: row.created_at_iso || row.data_json.createdAt || new Date().toISOString(),
-          };
-        }
-
-        return {
-          id: row.id,
-          userId: meta.userId || '',
-          userEmail: creatorEmail,
-          createdByName: createdName,
-          title: row.title || '',
-          description: cleanDescription,
-          category: row.category || 'Geral',
-          priority: (row.priority as any) || 'media',
-          status: (row.status as any) || (row.completed ? 'concluida' : 'pendente'),
-          dueDate: row.due_date || '',
-          assignedToType: assignedType,
-          assignedToName: assignedName,
-          assignedToEmail: assignedEmail,
-          createdByAdmin: meta.createdByAdmin || false,
-          attachments: meta.attachments || [],
-          attachmentName: meta.attachments?.[0]?.name,
-          attachmentUrl: meta.attachments?.[0]?.url,
-          attachmentType: meta.attachments?.[0]?.type,
-          completionAttachments: meta.completionAttachments || [],
-          completionAttachmentName: meta.completionAttachments?.[0]?.name,
-          completionAttachmentUrl: meta.completionAttachments?.[0]?.url,
-          completionAttachmentType: meta.completionAttachments?.[0]?.type,
-          completionNote: meta.completionNote,
-          completedAt: meta.completedAt || (row.completed ? row.created_at_iso : undefined),
-          completedByEmail: meta.completedByEmail,
-          completedByName: meta.completedByName,
-          createdAt: row.created_at_iso || new Date().toISOString(),
-        };
-      });
+      return taskRows.map((row: any) => mapRowToTask(row));
     } catch (err) {
       console.warn('Falha na consulta de tarefas no Supabase:', err);
+      return null;
+    }
+  },
+
+  async fetchTaskById(taskId: string): Promise<any | null> {
+    const supabase = getSupabaseClient();
+    if (!supabase || !taskId) return null;
+    try {
+      const { data, error } = await supabase
+        .from('user_tasks')
+        .select(`
+          id,
+          title,
+          description,
+          category,
+          assigned_to,
+          priority,
+          status,
+          due_date,
+          completed,
+          created_by,
+          created_at_iso
+        `)
+        .eq('id', taskId)
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      return mapRowToTask(data);
+    } catch (err) {
+      console.warn('Erro ao buscar tarefa por ID no Supabase:', err);
       return null;
     }
   },
@@ -529,7 +589,24 @@ export const supabaseService = {
     try {
       const { data, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(`
+          id,
+          author_uid,
+          author_email,
+          author_name,
+          author_role,
+          content,
+          category,
+          is_announcement,
+          image_url,
+          attachment_url,
+          attachment_type,
+          attachment_name,
+          likes_count,
+          liked_by,
+          comments_count,
+          created_at_iso
+        `)
         .order('created_at_iso', { ascending: false })
         .limit(100);
       if (error) {
