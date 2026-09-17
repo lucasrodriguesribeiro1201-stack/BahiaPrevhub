@@ -222,6 +222,7 @@ export const TasksSection: React.FC = () => {
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [isClearingTasks, setIsClearingTasks] = useState(false);
   const hasAttemptedAutoRestoreRef = useRef(false);
+  const hasSyncedLocalTasksRef = useRef(false);
 
   // Modal for new task
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -686,6 +687,29 @@ export const TasksSection: React.FC = () => {
         }
       } catch (err) {
         console.warn('Erro ao ler tarefas do Supabase:', err);
+      }
+
+      // Auto-migrar tarefas legadas retidas no localStorage para o Supabase Docker
+      if (!hasSyncedLocalTasksRef.current) {
+        hasSyncedLocalTasksRef.current = true;
+        try {
+          const rawLocal = localStorage.getItem(`tasks_v2_${userId}`) || localStorage.getItem('tasks_v2_global');
+          if (rawLocal) {
+            const parsedLocal = JSON.parse(rawLocal);
+            if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
+              const missingTasks = parsedLocal.filter((lt: any) => lt && lt.id && !taskMap.has(lt.id));
+              if (missingTasks.length > 0) {
+                console.log(`[Sync] Auto-migrando ${missingTasks.length} tarefas locais para o Supabase Docker...`);
+                for (const mt of missingTasks) {
+                  await supabaseService.saveTask(mt);
+                  taskMap.set(mt.id, mt);
+                }
+              }
+            }
+          }
+        } catch (syncErr) {
+          console.warn('Erro ao sincronizar tarefas locais com Supabase:', syncErr);
+        }
       }
 
       const loaded = Array.from(taskMap.values());

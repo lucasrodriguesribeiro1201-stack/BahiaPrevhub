@@ -1,0 +1,35 @@
+id,author_name,author_role,author_uid,author_email,content,type,category,is_announcement,image_url,attachment_url,attachment_type,attachment_name,likes,likes_count,liked_by,comments_count,data_json,created_at_iso
+post_1787226417264_ogb19,Lucas Rodrigues,Analista de Marketing,u_lucasrodrigues_bahiaprev_com_br,lucasrodrigues@bahiaprev.com.br,"<!-- POST_META:{""category"":""Geral"",""isAnnouncement"":false,""authorEmail"":""lucasrodrigues@bahiaprev.com.br"",""likesCount"":4,""commentsCount"":0,""comments"":[]} -->
+👋 Sejam bem-vindos ao Bahia Prev HUB!
+
+O Bahia Prev HUB é a nossa central de comunicação",Geral,Geral,false,,,,,4,4,"[""usr_1788376633657_ak5qa"",""usr_1788279164044_yhql9"",""u_thayan_bahiaprev_com_br"",""usr_1788279120913_17v61""]",0,"{""id"":""post_1787226417264_ogb19"",""content"":""👋 Sejam bem-vindos ao Bahia Prev HUB!\n\nO Bahia Prev HUB é a nossa central de comunicação"",""likedBy"":[""usr_1788376633657_ak5qa"",""usr_1788279164044_yhql9"",""u_thayan_bahiaprev_com_br"",""usr_1788279120913_17v61""],""category"":""Geral"",""imageUrl"":null,""authorUid"":""u_lucasrodrigues_bahiaprev_com_br"",""authorName"":""Lucas Rodrigues"",""authorRole"":""Analista de Marketing"",""likesCount"":4,""authorEmail"":""lucasrodrigues@bahiaprev.com.br"",""createdAtISO"":""2026-08-31T12:45:58.699+00:00"",""attachmentUrl"":null,""commentsCount"":0,""attachmentName"":null,""attachmentType"":null,""isAnnouncement"":false}",2026-08-31 12:45:58.699+00
+post_1788279413950_1duko,Elisnã,Gerente Geral,usr_1788274769621_plb66,elisna@bahiaprev.com.br,"<!-- POST_META:{""category"":""Comunicado"",""isAnnouncement"":true,""authorEmail"":""elisna@bahiaprev.com.br"",""likesCount"":5,""commentsCount"":2,""comments"":[]} -->
+Olá, bom dia, atendentes!
+
+Gostaria de informar que amanhã, dia 02/09/2026, às 15h, realizaremos uma reunião para apresentação da nova plataforma Bahia Prev Hub.
+
+A plataforma foi desenvolvida com o objetivo de melhorar a comunicação interna, organização e produtividade das nossas equipes.
+
+Nesta primeira reunião, apresentaremos o funcionamento geral da plataforma e os primeiros módulos que serão utilizados por todos:
+
+📢 Feed de Comunicados e Avisos
+📋 Minhas Tarefas
+
+Esses serão os primeiros recursos que passaremos a utilizar no dia a dia, contribuindo para uma comunicação mais eficiente e uma melhor organização das demandas e atividades.
+
+A participação de todos os atendentes é de fundamental importância, incluindo profissionais de plantão e das unidades, pois essa será uma ferramenta muito importante para o desenvolvimento e acompanhamento dos nossos trabalhos.
+
+Também estão convidados a participar:
+
+* Gerentes de setores;
+* Responsáveis pelo cadastro de planos;
+* Responsáveis pelo controle de estoque.
+
+📍 Formato da reunião:
+
+* Presencial: para os atendentes da região de Irecê que tiverem disponibilidade para comparecer ao Centro Administrativo;
+* Online: para os demais atendentes das unidades.
+
+⚠️ Reforçamos a importância da participação de todos, pois a Bahia Prev Hub será uma ferramenta que fará parte da nossa rotina de trabalho e contribuirá diretamente para uma comunicação mais ágil, organizada e produtiva.
+
+Contamos com a presença de todos!",Comunicado,Comunicado,true,,,,,5,5,"[""u_lucasrodrigues_bahiaprev_com_br"",""usr_1788376633657_ak5qa"",""usr_1788279164044_yhql9"",""u_thayan_bahiaprev_com_br"",""u_nilton_bahiaprev_com_br""]",2,"{""id"":""post_1788279413950_1duko"",""content"":""Olá, bom dia, atendentes!\n\nGostaria de informar que amanhã, dia 02/09/2026, às 15h, realizaremos uma reunião para apresentação da nova plataforma Bahia Prev Hub.\n\nA plataforma foi desenvolvida com o objetivo de melhorar a comunicação interna, organização e produtividade das nossas equipes.\n\nNesta primeira reunião, apresentaremos o funcionamento geral da plataforma e os primeiros módulos que serão utilizados por todos:\n\n📢 Feed de Comunicados e Avisos\n📋 Minhas Tarefas\n\nEsses serão os primeiros recursos que passaremos a utilizar no dia a dia, contribuindo para uma comunicação mais eficiente e uma melhor organização das demandas e atividades.\n\nA participação de todos os atendentes é de fundamental importância, incluindo profissionais de plantão e das unidades, pois essa será uma ferramenta muito importante para o desenvolvimento e acompanhamento dos nossos trabalhos.\n\nTambém estão convidados a participar:\n\n* Gerentes de setores;\n* Responsáveis pelo cadastro de planos;\n* Responsáveis pelo controle de estoque.\n\n📍 Formato da reunião:\n\n* Presencial: para os atendentes da região de Irecê que tiverem disponibilidade para comparecer ao Centro Administrativo;\n* Online: para os demais atendentes das unidades.\n\n⚠️ Reforçamos a importância da participação de todos, pois a Bahia Prev Hub será uma ferramenta que fará parte da nossa rotina de trabalho e contribuirá diretamente para uma comunicação mais ágil, organizada e produtiva.\n\nContamos com a presença de todos!"",""likedBy"":[""u_lucasrodrigues_bahiaprev_com_br"",""usr_1788376633657_ak5qa"",""usr_1788279164044_yhql9"",""u_thayan_bahiaprev_com_br"",""u_nilton_bahiaprev_com_br""],""category"":""Comunicado"",""imageUrl"":null,""authorUid"":""usr_1788274769621_plb66"",""authorName"":""Elisnã"",""authorRole"":""Gerente Geral"",""likesCount"":5,""authorEmail"":""elisna@bahiaprev.com.br"",""createdAtISO"":""2026-09-01T16:16:53.95+00:00"",""attachmentUrl"":null,""commentsCount"":2,""attachmentName"":null,""attachmentType"":null,""isAnnouncement"":true}",2026-09-01 16:16:53.95+00

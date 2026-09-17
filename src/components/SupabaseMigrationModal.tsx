@@ -21,8 +21,11 @@ import {
   saveSupabaseCredentials, 
   testSupabaseConnection, 
   resetSupabaseClient,
+  DEFAULT_LOCAL_SUPABASE_URL,
+  DEFAULT_LOCAL_SUPABASE_ANON_KEY,
   SUPABASE_SQL_SCHEMA 
 } from '../lib/supabase';
+import { supabaseService } from '../lib/supabaseService';
 
 interface SupabaseMigrationModalProps {
   isOpen: boolean;
@@ -35,6 +38,8 @@ export function SupabaseMigrationModal({ isOpen, onClose }: SupabaseMigrationMod
   const [status, setStatus] = useState<{ loading: boolean; success?: boolean; message?: string }>({ loading: false });
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'config' | 'sql' | 'guide' | 'backup'>('config');
+  const [isMigratingLocalData, setIsMigratingLocalData] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,6 +72,122 @@ export function SupabaseMigrationModal({ isOpen, onClose }: SupabaseMigrationMod
     saveSupabaseCredentials(supabaseUrl, supabaseKey);
     resetSupabaseClient();
     await handleTestConnection(supabaseUrl, supabaseKey);
+  };
+
+  const handleSetLocalDocker = async () => {
+    setSupabaseUrl(DEFAULT_LOCAL_SUPABASE_URL);
+    setSupabaseKey(DEFAULT_LOCAL_SUPABASE_ANON_KEY);
+    saveSupabaseCredentials(DEFAULT_LOCAL_SUPABASE_URL, DEFAULT_LOCAL_SUPABASE_ANON_KEY);
+    resetSupabaseClient();
+    await handleTestConnection(DEFAULT_LOCAL_SUPABASE_URL, DEFAULT_LOCAL_SUPABASE_ANON_KEY);
+  };
+
+  const handleMigrateLocalDataToDocker = async () => {
+    setIsMigratingLocalData(true);
+    setMigrationResult(null);
+    try {
+      let tasksCount = 0;
+      let osCount = 0;
+      let surveysCount = 0;
+      let postsCount = 0;
+
+      // 1. Tarefas do localStorage
+      const localTasksRaw = localStorage.getItem('tasks_v2_global');
+      if (localTasksRaw) {
+        try {
+          const parsed = JSON.parse(localTasksRaw);
+          if (Array.isArray(parsed)) {
+            for (const t of parsed) {
+              if (t && t.id) {
+                await supabaseService.saveTask(t);
+                tasksCount++;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      // Varrer chaves de tarefas específicas de usuários
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('tasks_v2_') && k !== 'tasks_v2_global') {
+          try {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                for (const t of parsed) {
+                  if (t && t.id) {
+                    await supabaseService.saveTask(t);
+                    tasksCount++;
+                  }
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
+      // 2. Ordens de Serviço
+      const localOrdersRaw = localStorage.getItem('funeraria_os_v1');
+      if (localOrdersRaw) {
+        try {
+          const parsed = JSON.parse(localOrdersRaw);
+          if (Array.isArray(parsed)) {
+            for (const os of parsed) {
+              if (os && os.id) {
+                await supabaseService.saveOrder(os);
+                osCount++;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      // 3. Pesquisas de Satisfação
+      const localSurveysRaw = localStorage.getItem('funeraria_satisfaction_surveys_v1');
+      if (localSurveysRaw) {
+        try {
+          const parsed = JSON.parse(localSurveysRaw);
+          if (Array.isArray(parsed)) {
+            for (const s of parsed) {
+              if (s && s.id) {
+                await supabaseService.saveSurvey(s);
+                surveysCount++;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      // 4. Publicações em cache do feed
+      const localPostsRaw = localStorage.getItem('bahiaprev_feed_posts_cache');
+      if (localPostsRaw) {
+        try {
+          const parsed = JSON.parse(localPostsRaw);
+          if (Array.isArray(parsed)) {
+            for (const p of parsed) {
+              if (p && p.id) {
+                await supabaseService.savePost(p);
+                postsCount++;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      setMigrationResult({
+        success: true,
+        message: `Migração concluída com sucesso! Repassados para o Supabase Docker: ${tasksCount} tarefas, ${postsCount} publicações, ${osCount} Ordens de Serviço e ${surveysCount} pesquisas.`
+      });
+    } catch (err: any) {
+      setMigrationResult({
+        success: false,
+        message: `Erro ao repassar dados: ${err.message || 'Falha na conexão com o banco Docker local.'}`
+      });
+    } finally {
+      setIsMigratingLocalData(false);
+    }
   };
 
   const handleCopySql = () => {
@@ -215,6 +336,29 @@ export function SupabaseMigrationModal({ isOpen, onClose }: SupabaseMigrationMod
                     {status.message || 'Insira a URL e a Anon Key do seu projeto Supabase abaixo para conectar.'}
                   </p>
                 </div>
+              </div>
+
+              {/* Atalho Rápido Docker Local */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-emerald-50/80 border border-emerald-300 rounded-2xl gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-xs text-emerald-950">Ambiente Docker Local (Recomendado)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white font-black text-[9px] uppercase tracking-wider">
+                      Virtual na Máquina
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-snug">
+                    Conectar diretamente ao Supabase local rodando nos containers Docker (127.0.0.1:54321).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSetLocalDocker}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+                >
+                  <Server className="h-3.5 w-3.5" />
+                  <span>Ativar Supabase Docker</span>
+                </button>
               </div>
 
               {/* Inputs */}
@@ -397,6 +541,57 @@ export function SupabaseMigrationModal({ isOpen, onClose }: SupabaseMigrationMod
                   <Download className="h-4 w-4" />
                   <span>Baixar Backup JSON</span>
                 </button>
+              </div>
+
+              {/* Repassar Dados Locais para o Supabase Docker */}
+              <div className="p-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl border border-slate-800 space-y-4 shadow-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <UploadCloud className="h-4 w-4 text-emerald-400" />
+                      <h5 className="font-extrabold text-xs text-white uppercase tracking-wider">
+                        Repassar Dados Locais para o Supabase Docker
+                      </h5>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed max-w-lg">
+                      Lê todas as tarefas, publicações do feed, Ordens de Serviço e pesquisas salvas neste navegador e as grava diretamente nas tabelas do seu Supabase Docker local.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleMigrateLocalDataToDocker}
+                    disabled={isMigratingLocalData}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    {isMigratingLocalData ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin text-slate-950" />
+                        <span>Repassando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="h-4 w-4 text-slate-950" />
+                        <span>Repassar para o Docker</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {migrationResult && (
+                  <div className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
+                    migrationResult.success
+                      ? 'bg-emerald-950/80 border-emerald-700/80 text-emerald-200'
+                      : 'bg-rose-950/80 border-rose-700/80 text-rose-200'
+                  }`}>
+                    {migrationResult.success ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                    )}
+                    <span className="leading-relaxed">{migrationResult.message}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

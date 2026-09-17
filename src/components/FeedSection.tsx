@@ -237,6 +237,9 @@ export const FeedSection: React.FC = () => {
         }
 
         setPosts(realPosts);
+        try {
+          localStorage.setItem('bahiaprev_feed_posts_cache', JSON.stringify(realPosts));
+        } catch {}
       }
     } catch (err) {
       console.error("Error loading feed posts from Supabase:", err);
@@ -246,6 +249,18 @@ export const FeedSection: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // 1. Carregamento instantâneo do cache local se disponível
+    try {
+      const cached = localStorage.getItem('bahiaprev_feed_posts_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPosts(parsed);
+          setLoading(false);
+        }
+      }
+    } catch {}
+
     loadPostsFromSupabase();
     const interval = setInterval(() => {
       if (!document.hidden) {

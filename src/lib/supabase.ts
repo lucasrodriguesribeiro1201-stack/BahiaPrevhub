@@ -1,14 +1,27 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Get credentials from VITE_ env or localStorage fallback or BahiaPrev defaults
+export const DEFAULT_LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
+export const DEFAULT_LOCAL_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+
+// Get credentials from VITE_ env or localStorage or BahiaPrev Docker defaults
 export function getSupabaseCredentials(): { url: string; key: string } {
   const envUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_URL : '';
   const envKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_ANON_KEY : '';
-  const localUrl = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_url') : '';
-  const localKey = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_anon_key') : '';
+  let localUrl = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_url') : '';
+  let localKey = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_anon_key') : '';
 
-  let url = envUrl || localUrl || 'https://kualifdkjmpfzhsofvxc.supabase.co';
-  let key = envKey || localKey || 'sb_publishable_AaQz8IBv0mNF0yJaMpcryg_8POenBSS';
+  // Auto-clean stale remote cloud URLs (e.g. kualifdkjmpfzhsofvxc with quota limits) in favor of Docker local
+  if (localUrl && (localUrl.includes('supabase.co') || localUrl.includes('your-supabase-project'))) {
+    try {
+      localStorage.removeItem('supabase_url');
+      localStorage.removeItem('supabase_anon_key');
+    } catch {}
+    localUrl = '';
+    localKey = '';
+  }
+
+  let url = envUrl || localUrl || DEFAULT_LOCAL_SUPABASE_URL;
+  let key = envKey || localKey || DEFAULT_LOCAL_SUPABASE_ANON_KEY;
 
   // Sanitize URL if user typed /rest/v1/ or trailing slash
   if (url) {
