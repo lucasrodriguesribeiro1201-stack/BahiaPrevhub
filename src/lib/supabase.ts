@@ -1,17 +1,17 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-export const DEFAULT_LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
-export const DEFAULT_LOCAL_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+export const DEFAULT_LOCAL_SUPABASE_URL = 'https://qxkxttfgzkccdkvvlldi.supabase.co';
+export const DEFAULT_LOCAL_SUPABASE_ANON_KEY = 'sb_publishable_qoWrYWM-0Q-dHR53fOhZ8w_it8rymzd';
 
-// Get credentials from VITE_ env or localStorage or BahiaPrev Docker defaults
+// Get credentials from VITE_ env or localStorage or BahiaPrev default cloud project
 export function getSupabaseCredentials(): { url: string; key: string } {
   const envUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_URL : '';
   const envKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_ANON_KEY : '';
   let localUrl = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_url') : '';
   let localKey = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_anon_key') : '';
 
-  // Auto-clean stale remote cloud URLs (e.g. kualifdkjmpfzhsofvxc with quota limits) in favor of Docker local
-  if (localUrl && (localUrl.includes('supabase.co') || localUrl.includes('your-supabase-project'))) {
+  // Auto-clean old stale Docker 127.0.0.1 URLs in favor of Cloud
+  if (localUrl && localUrl.includes('127.0.0.1')) {
     try {
       localStorage.removeItem('supabase_url');
       localStorage.removeItem('supabase_anon_key');
