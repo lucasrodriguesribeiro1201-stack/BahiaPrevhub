@@ -543,18 +543,18 @@ export function SupabaseMigrationModal({ isOpen, onClose }: SupabaseMigrationMod
                 </button>
               </div>
 
-              {/* Repassar Dados Locais para o Supabase Docker */}
+              {/* Repassar Dados Locais para o Supabase */}
               <div className="p-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl border border-slate-800 space-y-4 shadow-xl">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <UploadCloud className="h-4 w-4 text-emerald-400" />
                       <h5 className="font-extrabold text-xs text-white uppercase tracking-wider">
-                        Repassar Dados Locais para o Supabase Docker
+                        Sincronizar Dados Anteriores para o Supabase
                       </h5>
                     </div>
                     <p className="text-[11px] text-slate-400 leading-relaxed max-w-lg">
-                      Lê todas as tarefas, publicações do feed, Ordens de Serviço e pesquisas salvas neste navegador e as grava diretamente nas tabelas do seu Supabase Docker local.
+                      Envia todas as tarefas, comunicados do mural, Ordens de Serviço e pesquisas salvas neste navegador diretamente para o seu novo banco de dados no Supabase.
                     </p>
                   </div>
 
@@ -562,17 +562,17 @@ export function SupabaseMigrationModal({ isOpen, onClose }: SupabaseMigrationMod
                     type="button"
                     onClick={handleMigrateLocalDataToDocker}
                     disabled={isMigratingLocalData}
-                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                    className="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shrink-0"
                   >
                     {isMigratingLocalData ? (
                       <>
                         <RefreshCw className="h-4 w-4 animate-spin text-slate-950" />
-                        <span>Repassando...</span>
+                        <span>Sincronizando...</span>
                       </>
                     ) : (
                       <>
                         <UploadCloud className="h-4 w-4 text-slate-950" />
-                        <span>Repassar para o Docker</span>
+                        <span>Enviar Dados Anteriores para o Banco</span>
                       </>
                     )}
                   </button>
