@@ -163,6 +163,16 @@ function MainAppContent() {
               <span>Alterar Foto</span>
             </button>
 
+            {isLucasAdmin && (
+              <button
+                onClick={() => setIsSupabaseModalOpen(true)}
+                className="px-2.5 py-1 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/40 text-indigo-200 text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                title="Configurar Conexão com o Supabase"
+              >
+                <Database className="h-3 w-3 text-indigo-300" />
+                <span>Banco de Dados</span>
+              </button>
+            )}
 
             <span className="hidden md:inline text-slate-400 font-normal">
               E-mail: <strong className="text-slate-200 font-medium">{user?.email}</strong>

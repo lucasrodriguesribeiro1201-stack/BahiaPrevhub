@@ -629,7 +629,7 @@ export const TasksSection: React.FC = () => {
   const safeSaveTasksLocally = useCallback((uId: string | undefined, list: Task[]) => {
     try {
       // Strip large data: base64 URLs for localStorage cache to stay well below browser limit
-      const cleanList = list.map(t => ({
+      const cleanList = list.filter(t => !t.id?.startsWith('task_bp_')).map(t => ({
         ...t,
         attachments: (t.attachments || []).map(a => ({
           name: a.name,
@@ -697,7 +697,7 @@ export const TasksSection: React.FC = () => {
           if (rawLocal) {
             const parsedLocal = JSON.parse(rawLocal);
             if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
-              const missingTasks = parsedLocal.filter((lt: any) => lt && lt.id && !taskMap.has(lt.id));
+              const missingTasks = parsedLocal.filter((lt: any) => lt && lt.id && !taskMap.has(lt.id) && !lt.id.startsWith('task_bp_'));
               if (missingTasks.length > 0) {
                 console.log(`[Sync] Auto-migrando ${missingTasks.length} tarefas locais para o Supabase Docker...`);
                 for (const mt of missingTasks) {
@@ -805,7 +805,7 @@ export const TasksSection: React.FC = () => {
       try {
         const parsed = JSON.parse(savedLocal);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setTasks(parsed);
+          setTasks(parsed.filter((t: any) => !t.id?.startsWith('task_bp_')));
         }
       } catch (e) {
         // ignore
