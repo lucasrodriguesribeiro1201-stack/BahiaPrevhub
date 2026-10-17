@@ -261,16 +261,9 @@ export const FeedSection: React.FC = () => {
       }
     } catch {}
 
+    // Load once when the feed is opened. Mutations already update local state;
+    // repeatedly downloading posts (including base64 media) was the main egress source.
     loadPostsFromSupabase();
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        loadPostsFromSupabase();
-      }
-    }, 60000);
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [loadPostsFromSupabase]);
 
   // Handle create post

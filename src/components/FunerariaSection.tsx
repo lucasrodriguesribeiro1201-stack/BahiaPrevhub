@@ -312,16 +312,9 @@ export const FunerariaSection: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Orders may contain base64 photos and audio. Download them only when this
+    // screen opens; each local mutation already refreshes the affected state.
     loadOrdersFromSupabase();
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        loadOrdersFromSupabase();
-      }
-    }, 15000);
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [loadOrdersFromSupabase]);
 
   const showToast = (msg: string) => {

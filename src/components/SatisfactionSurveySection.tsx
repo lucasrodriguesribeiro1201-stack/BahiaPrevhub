@@ -352,16 +352,9 @@ export const SatisfactionSurveySection: React.FC<SatisfactionSurveySectionProps>
   }, []);
 
   useEffect(() => {
+    // Load once on entry. Polling the complete survey list every 15 seconds
+    // generated unnecessary database egress.
     loadSurveysFromSupabase();
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        loadSurveysFromSupabase();
-      }
-    }, 15000);
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [loadSurveysFromSupabase]);
 
   // Compute IQAF (Índice de Qualidade do Atendimento Funerário) & Classification

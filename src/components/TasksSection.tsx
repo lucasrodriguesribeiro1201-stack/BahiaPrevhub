@@ -813,17 +813,6 @@ export const TasksSection: React.FC = () => {
     }
 
     loadTasksFromSupabase();
-
-    // Smart polling: every 30 seconds, only when tab is visible
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        loadTasksFromSupabase();
-      }
-    }, 30000);
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [userId, loadTasksFromSupabase, isTargetedToUser]);
 
   // Keep fresh refs for Realtime callback without triggering resubscriptions

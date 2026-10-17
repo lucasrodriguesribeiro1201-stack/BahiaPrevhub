@@ -661,7 +661,9 @@ export const supabaseService = {
     const supabase = getSupabaseClient();
     if (!supabase) return false;
     try {
-      const packedContent = packPostMetadata(post.content || '', post);
+      // Media already has dedicated columns. Keeping base64 attachments inside
+      // content as well duplicated every image/file in each feed response.
+      const packedContent = (post.content || '').replace(/^<!-- POST_META:[\s\S]*?-->\n?/i, '').trim();
       const likesCount = post.likesCount ?? post.likes ?? (Array.isArray(post.likedBy) ? post.likedBy.length : 0);
       const likedBy = Array.isArray(post.likedBy) ? post.likedBy : (Array.isArray(post.liked_by) ? post.liked_by : []);
 
@@ -692,8 +694,6 @@ export const supabaseService = {
           content: post.content || '',
           category: post.category || (post.isAnnouncement ? 'Comunicado' : 'Geral'),
           isAnnouncement: Boolean(post.isAnnouncement || post.category === 'Comunicado'),
-          imageUrl: post.imageUrl || post.image_url || null,
-          attachmentUrl: post.attachmentUrl || post.attachment_url || null,
           attachmentType: post.attachmentType || post.attachment_type || null,
           attachmentName: post.attachmentName || post.attachment_name || null,
           likesCount: likesCount,
